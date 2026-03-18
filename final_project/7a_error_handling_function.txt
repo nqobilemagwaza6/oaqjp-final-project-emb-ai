@@ -2,14 +2,46 @@ import requests
 import json
 
 def emotion_detector(text_to_analyze):
-    url = 'https://sn-watson-emotion.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/EmotionPredict'
+    """Detect emotions in the provided text using Watson NLP EmotionPredict API.
+
+    Returns a dictionary with emotions and dominant emotion.
+    Handles blank input by returning None values.
+    """
+    url = "https://sn-watson-emotion.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/EmotionPredict"
     headers = {"grpc-metadata-mm-model-id": "emotion_aggregated-workflow_lang_en_stock"}
     input_json = {"raw_document": {"text": text_to_analyze}}
 
     try:
         response = requests.post(url, headers=headers, json=input_json)
+
+        # If the server returns 400, return dictionary with None values
+        if response.status_code == 400:
+            return {
+                'anger': None,
+                'disgust': None,
+                'fear': None,
+                'joy': None,
+                'sadness': None,
+                'dominant_emotion': None
+            }
+
+        response_dict = response.json()
+        emotions = response_dict["emotionPredictions"][0]["emotion"]
+
+        # Determine dominant emotion
+        dominant_emotion = max(emotions, key=emotions.get)
+
+        return {
+            'anger': emotions.get('anger'),
+            'disgust': emotions.get('disgust'),
+            'fear': emotions.get('fear'),
+            'joy': emotions.get('joy'),
+            'sadness': emotions.get('sadness'),
+            'dominant_emotion': dominant_emotion
+        }
+
     except requests.exceptions.RequestException:
-        # Handle network errors
+        # In case of network or other request-related errors
         return {
             'anger': None,
             'disgust': None,
@@ -18,29 +50,3 @@ def emotion_detector(text_to_analyze):
             'sadness': None,
             'dominant_emotion': None
         }
-
-    # Check for blank input / bad request
-    if response.status_code == 400:
-        return {
-            'anger': None,
-            'disgust': None,
-            'fear': None,
-            'joy': None,
-            'sadness': None,
-            'dominant_emotion': None
-        }
-
-    data = response.json()
-    emotions = data['emotionPredictions'][0]['emotion']
-
-    # Find dominant emotion
-    dominant = max(emotions, key=emotions.get)
-
-    return {
-        'anger': emotions['anger'],
-        'disgust': emotions['disgust'],
-        'fear': emotions['fear'],
-        'joy': emotions['joy'],
-        'sadness': emotions['sadness'],
-        'dominant_emotion': dominant
-    }
