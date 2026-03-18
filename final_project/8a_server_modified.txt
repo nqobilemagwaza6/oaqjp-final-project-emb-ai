@@ -1,27 +1,27 @@
-from flask import Flask, request, jsonify
+"""Module for deploying Emotion Detection application using Flask."""
+
+from flask import Flask, render_template, request
 from EmotionDetection.emotion_detection import emotion_detector
 
 app = Flask(__name__)
 
-@app.route('/emotionDetector', methods=['POST'])
-def emotion_detector_endpoint():
-    """
-    Flask endpoint that accepts POST requests with JSON text input,
-    passes the text to the emotion_detector function, and returns
-    the emotion analysis as JSON. Handles blank input errors.
-    """
-    data = request.get_json()
-    text = data.get("text", "")
-    result = emotion_detector(text)
-    
-    if result['dominant_emotion'] is None:
-        return "Invalid text! Please try again!", 400
-    
-    return jsonify(result)
+@app.route("/emotionDetector", methods=["POST"])
+def emotion_detector_route():
+    """Receive text input from the user and return detected emotions."""
+    text_to_analyze = request.form.get("text", "")
+    result = emotion_detector(text_to_analyze)
+    if result["dominant_emotion"] is None:
+        return "Invalid text! Please try again!"
+    return (
+        f"For the given statement, the system response is "
+        f"'anger': {result['anger']}, "
+        f"'disgust': {result['disgust']}, "
+        f"'fear': {result['fear']}, "
+        f"'joy': {result['joy']}, "
+        f"'sadness': {result['sadness']}. "
+        f"The dominant emotion is {result['dominant_emotion']}."
+    )
 
 if __name__ == "__main__":
-    """
-    Run the Flask app on localhost:5000.
-    """
-    app.run(host="localhost", port=5000)
-
+    """Start the Flask application on localhost:5000."""
+    app.run(host="0.0.0.0", port=5000, debug=True)
