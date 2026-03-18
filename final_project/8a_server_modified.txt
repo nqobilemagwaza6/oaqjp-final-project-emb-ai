@@ -1,1 +1,27 @@
+from flask import Flask, request, jsonify
+from EmotionDetection.emotion_detection import emotion_detector
+
+app = Flask(__name__)
+
+@app.route('/emotionDetector', methods=['POST'])
+def emotion_detector_endpoint():
+    """
+    Flask endpoint that accepts POST requests with JSON text input,
+    passes the text to the emotion_detector function, and returns
+    the emotion analysis as JSON. Handles blank input errors.
+    """
+    data = request.get_json()
+    text = data.get("text", "")
+    result = emotion_detector(text)
+    
+    if result['dominant_emotion'] is None:
+        return "Invalid text! Please try again!", 400
+    
+    return jsonify(result)
+
+if __name__ == "__main__":
+    """
+    Run the Flask app on localhost:5000.
+    """
+    app.run(host="localhost", port=5000)
 
