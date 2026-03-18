@@ -1,27 +1,33 @@
-from flask import Flask, request, render_template
-from EmotionDetection import emotion_detector
+"""Module for deploying Emotion Detection application using Flask with error handling."""
+
+from flask import Flask, render_template, request
+from EmotionDetection.emotion_detection import emotion_detector
 
 app = Flask(__name__)
 
-@app.route('/emotionDetector', methods=['GET', 'POST'])
-def detect_emotion():
-    if request.method == "POST":
-        statement = request.form.get('statement', "")
-        result = emotion_detector(statement)
+@app.route("/emotionDetector", methods=["POST"])
+def emotion_detector_route():
+    """Receive text input from the user and return detected emotions.
 
-        if result['dominant_emotion'] is None:
-            response_text = "Invalid text! Please try again!"
-        else:
-            response_text = (
-                f"For the given statement, the system response is "
-                f"'anger': {result['anger']}, 'disgust': {result['disgust']}, "
-                f"'fear': {result['fear']}, 'joy': {result['joy']} and "
-                f"'sadness': {result['sadness']}. The dominant emotion is {result['dominant_emotion']}."
-            )
+    If the input is blank or invalid, display an error message.
+    """
+    text_to_analyze = request.form.get("text", "")
+    result = emotion_detector(text_to_analyze)
 
-        return render_template('index.html', result=response_text)
-    else:
-        return render_template('index.html', result="")
+    # Handle blank or invalid input
+    if result["dominant_emotion"] is None:
+        return "Invalid text! Please try again!"
+
+    return (
+        f"For the given statement, the system response is "
+        f"'anger': {result['anger']}, "
+        f"'disgust': {result['disgust']}, "
+        f"'fear': {result['fear']}, "
+        f"'joy': {result['joy']}, "
+        f"'sadness': {result['sadness']}. "
+        f"The dominant emotion is {result['dominant_emotion']}."
+    )
 
 if __name__ == "__main__":
-    app.run(host='localhost', port=5000, debug=True)
+    """Start the Flask application on localhost:5000."""
+    app.run(host="0.0.0.0", port=5000, debug=True)
