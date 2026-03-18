@@ -1,23 +1,30 @@
-from flask import Flask, request, render_template
-from EmotionDetection import emotion_detector
+from flask import Flask, request, jsonify
+from EmotionDetection.emotion_detection import emotion_detector
 
 app = Flask(__name__)
 
-@app.route('/emotionDetector', methods=['GET', 'POST'])
-def detect_emotion():
-    if request.method == 'POST':
-        statement = request.form.get('statement', '')
-        if statement:
-            result = emotion_detector(statement)
-            response_text = (f"For the given statement, the system response is "
-                             f"'anger': {result['anger']}, 'disgust': {result['disgust']}, "
-                             f"'fear': {result['fear']}, 'joy': {result['joy']} and "
-                             f"'sadness': {result['sadness']}. The dominant emotion is "
-                             f"{result['dominant_emotion']}.")
-            return render_template('index.html', result=response_text)
-        else:
-            return render_template('index.html', result="Please enter a statement.")
-    return render_template('index.html', result=None)
+@app.route('/emotionDetector', methods=['POST'])
+def emotion_detector_api():
+    """Flask API route for emotion detection."""
+    data = request.get_json()
+    text = data.get("text", "").strip()
 
-if __name__ == '__main__':
-    app.run(host='localhost', port=5000, debug=True)
+    result = emotion_detector(text)
+
+    if result['dominant_emotion'] is None:
+        return jsonify({"message": "Invalid text! Please try again!"}), 400
+
+    response_message = (
+        f"For the given statement, the system response is "
+        f"'anger': {result['anger']}, "
+        f"'disgust': {result['disgust']}, "
+        f"'fear': {result['fear']}, "
+        f"'joy': {result['joy']}, "
+        f"'sadness': {result['sadness']}. "
+        f"The dominant emotion is {result['dominant_emotion']}."
+    )
+
+    return jsonify({"result": result, "message": response_message})
+
+if __name__ == "__main__":
+    app.run(host="localhost", port=5000, debug=True)
